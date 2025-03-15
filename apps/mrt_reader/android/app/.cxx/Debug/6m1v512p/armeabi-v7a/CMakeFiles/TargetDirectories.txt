@@ -1,0 +1,2 @@
+/Users/shafiulislam/Documents/dev/mrt_buddy_flutter/apps/mrt_reader/android/app/.cxx/Debug/6m1v512p/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/shafiulislam/Documents/dev/mrt_buddy_flutter/apps/mrt_reader/android/app/.cxx/Debug/6m1v512p/armeabi-v7a/CMakeFiles/rebuild_cache.dir

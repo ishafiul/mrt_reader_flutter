@@ -1,0 +1,43 @@
+name: mrt_buddy_monorepo
+repository: https://github.com/yourusername/mrt_buddy_flutter
+
+packages:
+  - packages/**
+  - apps/**
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
+
+scripts:
+  analyze:
+    run: melos exec -- "flutter analyze"
+    description: Run flutter analyze in all packages
+
+  format:
+    run: melos exec -- "flutter format lib"
+    description: Run flutter format in all packages
+
+  test:
+    run: melos exec -- "flutter test"
+    description: Run flutter test in all packages
+    packageFilters:
+      dirExists:
+        - test
+
+  build:
+    run: melos exec -- "flutter build"
+    description: Build all packages
+    packageFilters:
+      flutter: true
+  run_app_dev:
+    run: cd apps/mrt_reader && flutter run --flavor development --target lib/main_development.dart
+    description:
+    packageFilters:
+      flutter: true
+
+  clean:
+    run: melos exec -- "flutter clean"
+    description: Clean all packages
+    packageFilters:
+      flutter: true 

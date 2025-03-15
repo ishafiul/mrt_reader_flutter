@@ -1,0 +1,15 @@
+name: mrt_card_reader
+description: mrt_card_reader
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  nfc_manager: ^3.0.2
+
+dev_dependencies:
+  mocktail: ^1.0.4
+  test: ^1.25.8
+  very_good_analysis: ^6.0.0
