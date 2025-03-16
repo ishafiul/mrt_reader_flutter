@@ -1,3 +1,6 @@
 .cursor
 .idea
 .dart_tool
+.DS_Store
+*.iml
+*.lock
