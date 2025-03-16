@@ -110,3 +110,9 @@ app.*.map.json
 !.idea/codeStyles/
 !.idea/dictionaries/
 !.idea/runConfigurations/
+
+# generated code
+*.g.dart
+*.freezed.dart
+*.config.dart
+*.diff
