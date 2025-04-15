@@ -1,0 +1,22 @@
+name: mrt_card_reader_example
+description: Example app for the Dhaka MRT Card Reader package
+publish_to: 'none'
+
+environment:
+  sdk: ^3.5.0
+  flutter: ^3.19.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  mrt_card_reader:
+    path: ../
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true 

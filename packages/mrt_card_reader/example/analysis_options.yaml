@@ -1,0 +1,15 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - always_use_package_imports
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_single_quotes
+    - sort_child_properties_last
+
+analyzer:
+  errors:
+    unused_local_variable: warning
+    unused_field: warning
+    unnecessary_null_comparison: warning 

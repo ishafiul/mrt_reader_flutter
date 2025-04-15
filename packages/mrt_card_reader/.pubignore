@@ -1,15 +1,20 @@
-# Files and directories created by pub
+# Development files and directories
 .dart_tool/
 .packages
 pubspec.lock
-
-# Conventional directory for build outputs
-build/
-
-# Directory created by dartdoc
-doc/api/
-
-# IDE files
 .idea/
 .vscode/
 *.iml
+.gitignore
+
+# Test files
+test/
+coverage/
+.github/
+.travis.yml
+analysis_options.yaml
+coverage_badge.svg
+
+# Build outputs
+build/
+melos_mrt_card_reader.iml

@@ -4,18 +4,18 @@
 [![Pub Version](https://img.shields.io/pub/v/mrt_card_reader.svg)](https://pub.dev/packages/mrt_card_reader)
 [![License: GPL-3.0][license_badge]][license_link]
 
-A Flutter package for reading transaction data from MRT (Mass Rapid Transit) cards using NFC. This package allows you to easily access card balance and transaction history from supported MRT cards.
+A Flutter package for reading transaction data from Dhaka MRT (Mass Rapid Transit) metro rail cards using NFC. This package allows you to easily access card balance and transaction history.
 
 ![MRT Card Reader Demo](https://raw.githubusercontent.com/ishafiul/mrt_reader_flutter/main/packages/mrt_card_reader/doc/assets/mrt_card_reader_demo.jpg)
 
 ## Features
 
 - Check NFC availability on the device
-- Read MRT card balance
+- Read Dhaka MRT card balance
 - Retrieve transaction history (journeys and top-ups)
 - Parse transaction details including:
   - Transaction timestamps
-  - Origin and destination stations
+  - Origin and destination
   - Journey costs
   - Top-up amounts
   - Current balance
@@ -168,6 +168,8 @@ class _MrtCardReaderDemoState extends State<MrtCardReaderDemo> {
   }
 }
 ```
+
+For a complete example, check out the [example](https://github.com/ishafiul/mrt_reader_flutter/tree/main/packages/mrt_card_reader/example) directory in the repository.
 
 ## API Reference
 

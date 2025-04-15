@@ -1,9 +1,9 @@
-/// A Dart package for reading transaction data from MRT (Mass Rapid Transit) 
-/// cards via NFC.
+/// A Dart package for reading transaction data from Dhaka MRT (Mass Rapid 
+/// Transit) metro rail cards via NFC.
 ///
-/// This library provides a simple interface to interact with MRT cards, 
+/// This library provides a simple interface to interact with Dhaka MRT cards, 
 /// allowing developers to retrieve card balance and transaction history 
-/// information from supported cards.
+/// information from Line 6 metro rail cards.
 ///
 /// To use this package, you need a device with NFC capabilities.
 library;
