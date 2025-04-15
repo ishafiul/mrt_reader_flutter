@@ -1,14 +1,10 @@
+/// Represents a transaction record from an MRT card.
+/// 
+/// This class contains information about a single transaction including
+/// its type (journey or top-up), stations involved, balance, and cost.
 class MrtTransaction {
-  final String fixedHeader;
-  final String timestamp;
-  final String transactionType;
-  final String fromStation;
-  final String toStation;
-  final int balance;
-  final int? cost;
-  final String trailing;
-  final bool isTopup;
 
+  /// Creates a new MRT transaction instance.
   MrtTransaction({
     required this.fixedHeader,
     required this.timestamp,
@@ -16,11 +12,10 @@ class MrtTransaction {
     required this.fromStation,
     required this.toStation,
     required this.balance,
-    this.cost,
-    required this.trailing,
-    required this.isTopup,
+    required this.trailing, required this.isTopup, this.cost,
   });
 
+  /// Creates a transaction instance from a map.
   factory MrtTransaction.fromMap(Map<String, dynamic> map) {
     return MrtTransaction(
       fixedHeader: map['fixedHeader'] as String,
@@ -34,7 +29,36 @@ class MrtTransaction {
       isTopup: map['isTopup'] as bool,
     );
   }
+  /// Raw header data from the card's data block.
+  final String fixedHeader;
+  
+  /// Timestamp of when the transaction occurred.
+  /// Format: YYYY-MM-DD HH:MM
+  final String timestamp;
+  
+  /// Transaction type in hexadecimal format.
+  final String transactionType;
+  
+  /// Name of the origin station (or top-up location).
+  final String fromStation;
+  
+  /// Name of the destination station (may be empty for top-ups).
+  final String toStation;
+  
+  /// Card balance after this transaction (in local currency).
+  final int balance;
+  
+  /// Cost of the journey or amount topped up (in local currency).
+  /// Null if unknown or not applicable.
+  final int? cost;
+  
+  /// Trailing data from the card's data block.
+  final String trailing;
+  
+  /// Whether this transaction represents a top-up rather than a journey.
+  final bool isTopup;
 
+  /// Converts this transaction to a map.
   Map<String, dynamic> toMap() {
     return {
       'fixedHeader': fixedHeader,

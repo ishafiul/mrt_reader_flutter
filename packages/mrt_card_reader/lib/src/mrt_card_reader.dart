@@ -4,15 +4,37 @@ import 'package:mrt_card_reader/src/models/transaction.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/platform_tags.dart';
 
+/// A utility class for reading MRT (Mass Rapid Transit) card data via NFC.
+///
+/// This class provides functionality to check NFC availability and read
+/// transaction history from compatible MRT cards. It handles the low-level
+/// communication with the NFC hardware and parses the raw data into
+/// meaningful transaction records.
 class MrtCardReader {
+  /// Checks if NFC is available on the device.
+  ///
+  /// Returns `true` if NFC is available and enabled, `false` otherwise.
   static Future<bool> isAvailable() async {
-    return await NfcManager.instance.isAvailable();
+    return NfcManager.instance.isAvailable();
   }
 
+  /// Starts an NFC reading session to retrieve MRT card data.
+  ///
+  /// This method initiates an NFC session that waits for a compatible MRT card
+  /// to be presented to the device. Once a card is detected, it reads the card's
+  /// transaction history and provides the data through callback functions.
+  ///
+  /// Parameters:
+  /// - [onStatus]: Callback that provides status updates during the reading process.
+  /// - [onBalance]: Callback that provides the current card balance after successful reading.
+  /// - [onTransactions]: Callback that provides the list of transactions read from the card.
+  ///
+  /// The NFC session will remain active until either a card is successfully read
+  /// or an error occurs, at which point the session is automatically stopped.
   static Future<void> startSession({
-    required Function(String) onStatus,
-    required Function(int?) onBalance,
-    required Function(List<MrtTransaction>) onTransactions,
+    required void Function(String status) onStatus,
+    required void Function(int? balance) onBalance,
+    required void Function(List<MrtTransaction> transactions) onTransactions,
   }) async {
     onStatus('Waiting for card...');
 
@@ -89,7 +111,7 @@ class MrtCardReader {
       command[idx++] = 0x06; // Command code
 
       // Copy IDM
-      for (int i = 0; i < idm.length; i++) {
+      for (var i = 0; i < idm.length; i++) {
         command[idx++] = idm[i];
       }
 
@@ -99,7 +121,7 @@ class MrtCardReader {
       command[idx++] = numberOfBlocksToRead; // Number of blocks
 
       // Copy block list elements
-      for (int i = 0; i < blockListElements.length; i++) {
+      for (var i = 0; i < blockListElements.length; i++) {
         command[idx++] = blockListElements[i];
       }
 
@@ -126,7 +148,7 @@ class MrtCardReader {
         return transactions;
       }
 
-      for (int i = 0; i < numBlocks; i++) {
+      for (var i = 0; i < numBlocks; i++) {
         final offset = i * blockSize;
         final block = blockData.sublist(offset, offset + blockSize);
 
@@ -173,8 +195,8 @@ class MrtCardReader {
     final fromStationCode = block[8] & 0xFF;
 
     // Separator (Offset 9)
-    final separator = block[9] & 0xFF;
-
+    // The separator byte is at position 9 but we don't use it currently
+    
     // To Station (Offset 10)
     final toStationCode = block[10] & 0xFF;
 
@@ -200,8 +222,8 @@ class MrtCardReader {
     final toStation = _getStationName(toStationCode);
 
     // Determine if this is a topup transaction
-    final isTopup = fromStation != "Unknown Station ($fromStationCode)" && 
-                   (toStation == "Unknown Station ($toStationCode)" || toStationCode == 0);
+    final isTopup = fromStation != 'Unknown Station ($fromStationCode)' && 
+                   (toStation == 'Unknown Station ($toStationCode)' || toStationCode == 0);
 
     // Calculate cost
     int? cost;
@@ -212,8 +234,8 @@ class MrtCardReader {
       // We need to compare with previous transaction to determine the amount
       // For now, we'll set it to null and calculate it later
       cost = null;
-    } else if (fromStation != "Unknown Station ($fromStationCode)" && 
-               toStation != "Unknown Station ($toStationCode)") {
+    } else if (fromStation != 'Unknown Station ($fromStationCode)' && 
+               toStation != 'Unknown Station ($toStationCode)') {
       // For a journey, calculate fare based on stations
       cost = _calculateFare(fromStationCode, toStationCode);
     }
@@ -258,7 +280,7 @@ class MrtCardReader {
     
     final stationCodes = [10, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 95];
     
-    for (int i = 0; i < stationCodes.length; i++) {
+    for (var i = 0; i < stationCodes.length; i++) {
       indices[stationCodes[i]] = i;
     }
     
@@ -277,32 +299,32 @@ class MrtCardReader {
   static String _getStationName(int code) {
     // Map station codes to names - update with actual station codes
     final stationMap = {
-      10: "Motijheel",
-      20: "Bangladesh Secretariat",
-      25: "Dhaka University",
-      30: "Shahbagh",
-      35: "Karwan Bazar",
-      40: "Farmgate",
-      45: "Bijoy Sarani",
-      50: "Agargaon",
-      55: "Shewrapara",
-      60: "Kazipara",
-      65: "Mirpur 10",
-      70: "Mirpur 11",
-      75: "Pallabi",
-      80: "Uttara South",
-      85: "Uttara Center",
-      95: "Uttara North",
+      10: 'Motijheel',
+      20: 'Bangladesh Secretariat',
+      25: 'Dhaka University',
+      30: 'Shahbagh',
+      35: 'Karwan Bazar',
+      40: 'Farmgate',
+      45: 'Bijoy Sarani',
+      50: 'Agargaon',
+      55: 'Shewrapara',
+      60: 'Kazipara',
+      65: 'Mirpur 10',
+      70: 'Mirpur 11',
+      75: 'Pallabi',
+      80: 'Uttara South',
+      85: 'Uttara Center',
+      95: 'Uttara North',
     };
 
-    return stationMap[code] ?? "Unknown Station ($code)";
+    return stationMap[code] ?? 'Unknown Station ($code)';
   }
 
   static void _calculateTopupAmounts(List<MrtTransaction> transactions) {
     // Skip if there are no transactions
     if (transactions.isEmpty) return;
     
-    for (int i = 0; i < transactions.length - 1; i++) {
+    for (var i = 0; i < transactions.length - 1; i++) {
       final current = transactions[i];
       final next = transactions[i + 1];
       

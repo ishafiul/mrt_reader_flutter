@@ -1,7 +1,9 @@
 name: mrt_card_reader
-description: mrt_card_reader
-version: 0.0.1
-publish_to: none
+description: A Flutter package for reading transaction data from MRT cards using NFC. Based on the work by the MRT Buddy team. This package allows you to easily access card balance and transaction history from supported MRT cards.
+version: 0.1.0
+repository: https://github.com/ishafiul/mrt_reader_flutter
+homepage: https://github.com/ishafiul/mrt_reader_flutter
+issue_tracker: https://github.com/ishafiul/mrt_reader_flutter/issues
 
 environment:
   sdk: ^3.5.0
