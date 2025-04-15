@@ -1,0 +1,4 @@
+# melos_managed_dependency_overrides: mrt_card_reader
+dependency_overrides:
+  mrt_card_reader:
+    path: ..
