@@ -1,3 +1,7 @@
+## 0.1.1+2
+
+ - **DOCS**: updated image. ([5b5cda9e](https://github.com/yourusername/mrt_buddy_flutter/commit/5b5cda9eb966e4360551121b4e6c4643b3df6c08))
+
 ## 0.1.1+1
 
  - **DOCS**: updated image. ([e05e1d1e](https://github.com/yourusername/mrt_buddy_flutter/commit/e05e1d1ee5cce92f953dcee8cca25b696bed2c61))
