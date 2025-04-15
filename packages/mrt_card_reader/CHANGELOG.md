@@ -1,3 +1,8 @@
+## 0.1.1
+
+ - **FEAT**: Update MRT card reader. ([f707b254](https://github.com/yourusername/mrt_buddy_flutter/commit/f707b25494458734b7d11c8ab33851d2d711fea4))
+ - **DOCS**: updated image. ([fbc7a358](https://github.com/yourusername/mrt_buddy_flutter/commit/fbc7a3584357b86bc3cd75958ca90be452b99a73))
+
 # Changelog
 
 ## 0.1.0 - Initial Release (2025-03-16)
