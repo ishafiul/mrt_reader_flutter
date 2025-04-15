@@ -1,3 +1,7 @@
+## 0.1.1+1
+
+ - **DOCS**: updated image. ([e05e1d1e](https://github.com/yourusername/mrt_buddy_flutter/commit/e05e1d1ee5cce92f953dcee8cca25b696bed2c61))
+
 ## 0.1.1
 
  - **FEAT**: Update MRT card reader. ([f707b254](https://github.com/yourusername/mrt_buddy_flutter/commit/f707b25494458734b7d11c8ab33851d2d711fea4))

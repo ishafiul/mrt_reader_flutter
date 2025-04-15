@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`mrt_card_reader` - `v0.1.1+1`](#mrt_card_reader---v0111)
+
+---
+
+#### `mrt_card_reader` - `v0.1.1+1`
+
+ - **DOCS**: updated image. ([e05e1d1e](https://github.com/yourusername/mrt_buddy_flutter/commit/e05e1d1ee5cce92f953dcee8cca25b696bed2c61))
+
+
+## 2025-04-15
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`mrt_card_reader` - `v0.1.1`](#mrt_card_reader---v011)
 
 ---
