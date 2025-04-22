@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-04-22
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`mrt_card_reader` - `v0.1.2`](#mrt_card_reader---v012)
+
+---
+
+#### `mrt_card_reader` - `v0.1.2`
+
+ - **FEAT**: flutter dependencies. ([5d382037](https://github.com/yourusername/mrt_buddy_flutter/commit/5d3820376b2b88f351b5faf102d9212f20460b8e))
+
+
 ## 2025-04-15
 
 ### Changes

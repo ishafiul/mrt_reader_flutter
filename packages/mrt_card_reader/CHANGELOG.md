@@ -1,3 +1,7 @@
+## 0.1.2
+
+ - **FEAT**: flutter dependencies. ([5d382037](https://github.com/yourusername/mrt_buddy_flutter/commit/5d3820376b2b88f351b5faf102d9212f20460b8e))
+
 ## 0.1.1+2
 
  - **DOCS**: updated image. ([5b5cda9e](https://github.com/yourusername/mrt_buddy_flutter/commit/5b5cda9eb966e4360551121b4e6c4643b3df6c08))
