@@ -12,7 +12,8 @@ class CardHistoryPage extends StatefulWidget {
   State<CardHistoryPage> createState() => _CardHistoryPageState();
 }
 
-class _CardHistoryPageState extends State<CardHistoryPage> with AutomaticKeepAliveClientMixin {
+class _CardHistoryPageState extends State<CardHistoryPage>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -37,13 +38,13 @@ class CardHistoryView extends StatelessWidget {
       ),
       body: BlocBuilder<CardHistoryCubit, CardHistoryState>(
         builder: (context, state) {
-          if(state is CardHistoryStateInitial) {
+          if (state is CardHistoryStateInitial) {
             return const SizedBox();
           }
-          if(state is CardHistoryStateLoding) {
+          if (state is CardHistoryStateLoding) {
             return const Center(child: CircularProgressIndicator());
           }
-          if(state is CardHistoryStateLoaded) {
+          if (state is CardHistoryStateLoaded) {
             return _buildLoadedState(context, state.cards);
           }
           return const Center(child: Text('Something went wrong'));
@@ -275,7 +276,8 @@ class CardHistoryView extends StatelessWidget {
                           child: ListTile(
                             title: Text(
                               '${transaction.fromStation} → ${transaction.toStation}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             subtitle: Text(transaction.timestamp),
                             trailing: Text(
@@ -302,4 +304,4 @@ class CardHistoryView extends StatelessWidget {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
-} 
+}

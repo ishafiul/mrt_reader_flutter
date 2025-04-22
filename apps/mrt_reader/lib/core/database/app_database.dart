@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:injectable/injectable.dart';
 import 'package:mrt_card_reader/mrt_card_reader.dart';
 import 'package:mrt_reader/core/models/card_data.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:drift/native.dart';
 
 part 'app_database.g.dart';
 
@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
 
   // Convert CardEntity to CardData
   CardData _entityToCardData(CardEntity entity) {
-    List<dynamic> transactionsList = [];
+    var transactionsList = <dynamic>[];
     try {
       transactionsList = jsonDecode(entity.transactionsJson) as List<dynamic>;
     } catch (_) {
@@ -52,7 +52,8 @@ class AppDatabase extends _$AppDatabase {
     return CardData(
       cardId: entity.cardId,
       balance: entity.balance,
-      lastScanned: DateTime.fromMillisecondsSinceEpoch(entity.lastScannedTimestamp),
+      lastScanned:
+          DateTime.fromMillisecondsSinceEpoch(entity.lastScannedTimestamp),
       transactions: transactionsList
           .map((json) => MrtTransaction.fromMap(json as Map<String, dynamic>))
           .toList(),
@@ -70,10 +71,9 @@ LazyDatabase _openConnection() {
 
 @singleton
 class DatabaseService {
-  final AppDatabase _database;
-
   @factoryMethod
   DatabaseService() : _database = AppDatabase();
+  final AppDatabase _database;
 
   // Save card data
   Future<void> saveCardData(CardData cardData) async {
@@ -93,10 +93,10 @@ class DatabaseService {
   Future<CardData?> getCardById(String cardId) async {
     final query = _database.select(_database.cardEntities)
       ..where((tbl) => tbl.cardId.equals(cardId));
-    
+
     final entity = await query.getSingleOrNull();
     if (entity == null) return null;
-    
+
     return _database._entityToCardData(entity);
   }
 
@@ -104,7 +104,7 @@ class DatabaseService {
   Future<void> deleteCard(String cardId) async {
     final query = _database.delete(_database.cardEntities)
       ..where((tbl) => tbl.cardId.equals(cardId));
-    
+
     await query.go();
   }
-} 
+}

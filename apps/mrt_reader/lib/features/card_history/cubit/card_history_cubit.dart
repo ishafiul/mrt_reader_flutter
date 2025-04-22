@@ -1,14 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:mrt_reader/core/database/app_database.dart';
-import 'package:mrt_reader/core/models/card_data.dart';
 import 'package:mrt_reader/features/card_history/cubit/card_history_state.dart';
 
 @injectable
 class CardHistoryCubit extends Cubit<CardHistoryState> {
+  CardHistoryCubit(this._databaseService)
+      : super(const CardHistoryState.initial());
   final DatabaseService _databaseService;
-
-  CardHistoryCubit(this._databaseService) : super(const CardHistoryState.initial());
 
   Future<void> loadCards() async {
     emit(const CardHistoryState.loading());
@@ -31,4 +30,4 @@ class CardHistoryCubit extends Cubit<CardHistoryState> {
       emit(CardHistoryState.error('Failed to delete card: $e'));
     }
   }
-} 
+}

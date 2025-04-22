@@ -4,7 +4,8 @@ import 'package:mrt_card_reader/mrt_card_reader.dart';
 part 'card_data.freezed.dart';
 part 'card_data.g.dart';
 
-class MrtTransactionConverter implements JsonConverter<MrtTransaction, Map<String, dynamic>> {
+class MrtTransactionConverter
+    implements JsonConverter<MrtTransaction, Map<String, dynamic>> {
   const MrtTransactionConverter();
 
   @override
@@ -27,5 +28,6 @@ sealed class CardData with _$CardData {
     @MrtTransactionConverter() required List<MrtTransaction> transactions,
   }) = _CardData;
 
-  factory CardData.fromJson(Map<String, dynamic> json) => _$CardDataFromJson(json);
+  factory CardData.fromJson(Map<String, dynamic> json) =>
+      _$CardDataFromJson(json);
 }

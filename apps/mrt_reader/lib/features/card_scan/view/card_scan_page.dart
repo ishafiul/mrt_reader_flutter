@@ -98,44 +98,44 @@ class _CardScanViewState extends State<CardScanView> {
   }
 
   Widget _buildWaitingState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.nfc,
             size: 80,
             color: Colors.blue,
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'Waiting for card...',
             style: TextStyle(fontSize: 18),
           ),
-          const SizedBox(height: 24),
-          const CircularProgressIndicator(),
+          SizedBox(height: 24),
+          CircularProgressIndicator(),
         ],
       ),
     );
   }
 
   Widget _buildReadingState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.nfc,
             size: 80,
             color: Colors.amber,
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'Reading card data...',
             style: TextStyle(fontSize: 18),
           ),
-          const SizedBox(height: 24),
-          const CircularProgressIndicator(),
+          SizedBox(height: 24),
+          CircularProgressIndicator(),
         ],
       ),
     );
@@ -190,8 +190,10 @@ class _CardScanViewState extends State<CardScanView> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.account_balance_wallet,
-                          color: Colors.green),
+                      const Icon(
+                        Icons.account_balance_wallet,
+                        color: Colors.green,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(

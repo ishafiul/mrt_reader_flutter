@@ -5,4 +5,4 @@ import 'package:mrt_reader/core/di/injection.config.dart';
 final getIt = GetIt.instance;
 
 @InjectableInit()
-Future<void> configureDependencies() async => await getIt.init(); 
+Future<void> configureDependencies() async => getIt.init();

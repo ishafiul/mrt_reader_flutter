@@ -15,5 +15,4 @@ sealed class CardScanState with _$CardScanState {
     required List<MrtTransaction> transactions,
   }) = CardScanStateSuccess;
   const factory CardScanState.error(String message) = CardScanStateError;
-
-} 
+}

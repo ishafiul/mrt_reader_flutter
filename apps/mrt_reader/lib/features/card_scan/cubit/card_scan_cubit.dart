@@ -7,12 +7,11 @@ import 'package:mrt_reader/features/card_scan/cubit/card_scan_state.dart';
 
 @injectable
 class CardScanCubit extends Cubit<CardScanState> {
+  CardScanCubit(this._databaseService) : super(const CardScanState.initial());
   final DatabaseService _databaseService;
 
-  CardScanCubit(this._databaseService) : super(const CardScanState.initial());
-
   Future<void> startScan() async {
-    print("object");
+    print('object');
     // Check if NFC is available
     final isAvailable = await MrtCardReader.isAvailable();
     if (!isAvailable) {
@@ -26,14 +25,12 @@ class CardScanCubit extends Cubit<CardScanState> {
       await MrtCardReader.startSession(
         onStatus: (status) {
           if (status.contains('Reading')) {
-           // emit(const CardScanState.reading());
+            // emit(const CardScanState.reading());
           } else if (status.contains('Error')) {
             emit(CardScanState.error(status));
           }
         },
-        onBalance: (balance) {
-          print(balance);
-        },
+        onBalance: print,
         onTransactions: (transactions) async {
           print(transactions);
           if (transactions.isNotEmpty) {
@@ -52,11 +49,13 @@ class CardScanCubit extends Cubit<CardScanState> {
               ),
             );
 
-            emit(CardScanState.success(
-              cardId: cardId,
-              balance: balance,
-              transactions: transactions,
-            ),);
+            emit(
+              CardScanState.success(
+                cardId: cardId,
+                balance: balance,
+                transactions: transactions,
+              ),
+            );
           }
         },
       );
@@ -77,4 +76,4 @@ class CardScanCubit extends Cubit<CardScanState> {
     }
     emit(const CardScanState.initial());
   }
-} 
+}

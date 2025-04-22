@@ -10,10 +10,26 @@ import 'package:nfc_manager/platform_tags.dart';
 /// transaction history from compatible MRT cards. It handles the low-level
 /// communication with the NFC hardware and parses the raw data into
 /// meaningful transaction records.
+///
+/// Example usage:
+/// ```dart
+/// // Check if NFC is available
+/// final isNfcAvailable = await MrtCardReader.isAvailable();
+///
+/// // Start NFC session to read card data
+/// await MrtCardReader.startSession(
+///   onStatus: (status) => print('Status: $status'),
+///   onBalance: (balance) => print('Balance: $balance'),
+///   onTransactions: (transactions) => print('Transactions: $transactions'),
+/// );
+/// ```
 class MrtCardReader {
   /// Checks if NFC is available on the device.
   ///
   /// Returns `true` if NFC is available and enabled, `false` otherwise.
+  ///
+  /// This method should be called before attempting to start an NFC session
+  /// to ensure that the device supports NFC functionality.
   static Future<bool> isAvailable() async {
     return NfcManager.instance.isAvailable();
   }
@@ -26,11 +42,23 @@ class MrtCardReader {
   ///
   /// Parameters:
   /// - [onStatus]: Callback that provides status updates during the reading process.
+  ///   Status messages include "Waiting for card...", "Reading card...", etc.
   /// - [onBalance]: Callback that provides the current card balance after successful reading.
+  ///   The balance is provided in the smallest unit of currency (e.g., cents or paisa).
   /// - [onTransactions]: Callback that provides the list of transactions read from the card.
+  ///   The transactions are sorted with the most recent one first.
   ///
   /// The NFC session will remain active until either a card is successfully read
   /// or an error occurs, at which point the session is automatically stopped.
+  ///
+  /// Example:
+  /// ```dart
+  /// await MrtCardReader.startSession(
+  ///   onStatus: (status) => setState(() => _status = status),
+  ///   onBalance: (balance) => setState(() => _balance = balance),
+  ///   onTransactions: (transactions) => setState(() => _transactions = transactions),
+  /// );
+  /// ```
   static Future<void> startSession({
     required void Function(String status) onStatus,
     required void Function(int? balance) onBalance,
@@ -159,7 +187,7 @@ class MrtCardReader {
           print('Error parsing block: $e');
         }
       }
-      
+
       // Post-process transactions to calculate topup amounts
       _calculateTopupAmounts(transactions);
     } catch (e) {
@@ -196,7 +224,7 @@ class MrtCardReader {
 
     // Separator (Offset 9)
     // The separator byte is at position 9 but we don't use it currently
-    
+
     // To Station (Offset 10)
     final toStationCode = block[10] & 0xFF;
 
@@ -222,20 +250,20 @@ class MrtCardReader {
     final toStation = _getStationName(toStationCode);
 
     // Determine if this is a topup transaction
-    final isTopup = fromStation != 'Unknown Station ($fromStationCode)' && 
-                   (toStation == 'Unknown Station ($toStationCode)' || toStationCode == 0);
+    final isTopup = fromStation != 'Unknown Station ($fromStationCode)' &&
+        (toStation == 'Unknown Station ($toStationCode)' || toStationCode == 0);
 
     // Calculate cost
     int? cost;
-    
+
     // If it's a topup transaction
     if (isTopup) {
       // For topup, the cost is positive (amount added to the card)
       // We need to compare with previous transaction to determine the amount
       // For now, we'll set it to null and calculate it later
       cost = null;
-    } else if (fromStation != 'Unknown Station ($fromStationCode)' && 
-               toStation != 'Unknown Station ($toStationCode)') {
+    } else if (fromStation != 'Unknown Station ($fromStationCode)' &&
+        toStation != 'Unknown Station ($toStationCode)') {
       // For a journey, calculate fare based on stations
       cost = _calculateFare(fromStationCode, toStationCode);
     }
@@ -256,34 +284,53 @@ class MrtCardReader {
   static int _calculateFare(int fromStationCode, int toStationCode) {
     // Simple fare calculation based on distance between stations
     // This is a placeholder - replace with actual fare calculation logic
-    
+
     // Get the station indices from the station map
     final stationIndices = _getStationIndices();
-    
+
     // If either station is not in the map, return a default fare
-    if (!stationIndices.containsKey(fromStationCode) || 
+    if (!stationIndices.containsKey(fromStationCode) ||
         !stationIndices.containsKey(toStationCode)) {
       return 20; // Default fare
     }
-    
+
     // Calculate fare based on distance (number of stations)
-    final distance = (stationIndices[fromStationCode]! - stationIndices[toStationCode]!).abs();
-    
+    final distance =
+        (stationIndices[fromStationCode]! - stationIndices[toStationCode]!)
+            .abs();
+
     // Base fare + per station charge
     return 10 + (distance * 5);
   }
-  
+
   static Map<int, int> _getStationIndices() {
     // Map station codes to their position on the line
     // This helps calculate distance between stations
     final indices = <int, int>{};
-    
-    final stationCodes = [10, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 95];
-    
+
+    final stationCodes = [
+      10,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      55,
+      60,
+      65,
+      70,
+      75,
+      80,
+      85,
+      95
+    ];
+
     for (var i = 0; i < stationCodes.length; i++) {
       indices[stationCodes[i]] = i;
     }
-    
+
     return indices;
   }
 
@@ -323,17 +370,17 @@ class MrtCardReader {
   static void _calculateTopupAmounts(List<MrtTransaction> transactions) {
     // Skip if there are no transactions
     if (transactions.isEmpty) return;
-    
+
     for (var i = 0; i < transactions.length - 1; i++) {
       final current = transactions[i];
       final next = transactions[i + 1];
-      
+
       // Check if current transaction is a topup
       if (current.isTopup) {
         // Calculate topup amount by comparing balances
         // For topup, current balance should be higher than the previous transaction's balance
         final topupAmount = current.balance - next.balance;
-        
+
         // Only set positive topup amounts
         if (topupAmount > 0) {
           // Update the cost field in the current transaction

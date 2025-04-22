@@ -1,14 +1,17 @@
 name: mrt_card_reader
-description: A Flutter package for reading transaction data from Dhaka MRT metro rail cards using NFC. Based on the work by the MRT Buddy team. This package allows you to easily access card balance and transaction history from Dhaka Line 6 MRT cards.
+description: Read balance and transaction history from Dhaka MRT Line 6 metro rail cards via NFC. Based on the MRT Buddy team's work.
 version: 0.1.1+2
 repository: https://github.com/ishafiul/mrt_reader_flutter
 homepage: https://github.com/ishafiul/mrt_reader_flutter
 issue_tracker: https://github.com/ishafiul/mrt_reader_flutter/issues
 
 environment:
-  sdk: ^3.5.0
+  sdk: '>=2.18.1 <4.0.0'
+  flutter: ">=2.5.0"
 
 dependencies:
+  flutter:
+    sdk: flutter
   nfc_manager: ^3.0.2
 
 dev_dependencies:

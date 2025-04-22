@@ -44,8 +44,8 @@ class _MrtReaderHomePageState extends State<MrtReaderHomePage> {
     final isAvailable = await MrtCardReader.isAvailable();
     setState(() {
       _isNfcAvailable = isAvailable;
-      _status = isAvailable 
-          ? 'NFC is available. Ready to scan.' 
+      _status = isAvailable
+          ? 'NFC is available. Ready to scan.'
           : 'NFC is not available on this device.';
     });
   }
@@ -187,4 +187,4 @@ class _MrtReaderHomePageState extends State<MrtReaderHomePage> {
       ),
     );
   }
-} 
+}
