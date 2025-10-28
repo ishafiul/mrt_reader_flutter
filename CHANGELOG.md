@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-10-29
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - [`mrt_card_reader` - `v0.2.0`](#mrt_card_reader---v020)
+
+Packages with other changes:
+
+ - There are no other changes in this release.
+
+---
+
+#### `mrt_card_reader` - `v0.2.0`
+
+ - **FEAT**(transaction): add copyWith method and comprehensive docs. ([fc7be9b2](https://github.com/yourusername/mrt_buddy_flutter/commit/fc7be9b2aa2bf2b38cf4571a20f7695c545fb61a))
+ - **DOCS**: update README with new features and usage examples. ([1a89c3f9](https://github.com/yourusername/mrt_buddy_flutter/commit/1a89c3f9cefd1f8995ad35423f873cf41961b03a))
+ - **BREAKING** **FEAT**: add instance-based API with session management. ([36d4bb71](https://github.com/yourusername/mrt_buddy_flutter/commit/36d4bb71c7fcc7818791ab2670d2b4c0eb080882))
+ - **BREAKING** **FEAT**: add infrastructure for production-ready package. ([48293b00](https://github.com/yourusername/mrt_buddy_flutter/commit/48293b003c805aa1b467cf02ad5d99ed2da222e0))
+
+
 ## 2025-04-22
 
 ### Changes

@@ -1,3 +1,12 @@
+## 0.2.0
+
+> Note: This release has breaking changes.
+
+ - **FEAT**(transaction): add copyWith method and comprehensive docs. ([fc7be9b2](https://github.com/yourusername/mrt_buddy_flutter/commit/fc7be9b2aa2bf2b38cf4571a20f7695c545fb61a))
+ - **DOCS**: update README with new features and usage examples. ([1a89c3f9](https://github.com/yourusername/mrt_buddy_flutter/commit/1a89c3f9cefd1f8995ad35423f873cf41961b03a))
+ - **BREAKING** **FEAT**: add instance-based API with session management. ([36d4bb71](https://github.com/yourusername/mrt_buddy_flutter/commit/36d4bb71c7fcc7818791ab2670d2b4c0eb080882))
+ - **BREAKING** **FEAT**: add infrastructure for production-ready package. ([48293b00](https://github.com/yourusername/mrt_buddy_flutter/commit/48293b003c805aa1b467cf02ad5d99ed2da222e0))
+
 ## 0.1.2
 
  - **FEAT**: flutter dependencies. ([5d382037](https://github.com/yourusername/mrt_buddy_flutter/commit/5d3820376b2b88f351b5faf102d9212f20460b8e))
