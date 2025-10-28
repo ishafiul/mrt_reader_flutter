@@ -1,6 +1,11 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:mrt_card_reader/src/config/mrt_config.dart';
+import 'package:mrt_card_reader/src/exceptions/mrt_exceptions.dart';
 import 'package:mrt_card_reader/src/models/transaction.dart';
+import 'package:mrt_card_reader/src/utils/logger.dart';
+import 'package:mrt_card_reader/src/validators/data_validator.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/platform_tags.dart';
 
@@ -23,6 +28,7 @@ import 'package:nfc_manager/platform_tags.dart';
 ///   onTransactions: (transactions) => print('Transactions: $transactions'),
 /// );
 /// ```
+/// A utility class for reading MRT (Mass Rapid Transit) card data via NFC.
 class MrtCardReader {
   /// Checks if NFC is available on the device.
   ///
@@ -36,98 +42,189 @@ class MrtCardReader {
 
   /// Starts an NFC reading session to retrieve MRT card data.
   ///
-  /// This method initiates an NFC session that waits for a compatible MRT card
-  /// to be presented to the device. Once a card is detected, it reads the card's
-  /// transaction history and provides the data through callback functions.
+  /// This method initiates an NFC session that waits for a compatible
+  /// MRT card to be presented to the device. Once a card is detected,
+  /// it reads the card's transaction history.
   ///
   /// Parameters:
-  /// - [onStatus]: Callback that provides status updates during the reading process.
-  ///   Status messages include "Waiting for card...", "Reading card...", etc.
-  /// - [onBalance]: Callback that provides the current card balance after successful reading.
-  ///   The balance is provided in the smallest unit of currency (e.g., cents or paisa).
-  /// - [onTransactions]: Callback that provides the list of transactions read from the card.
-  ///   The transactions are sorted with the most recent one first.
+  /// - [onStatus]: Callback for status updates during reading.
+  /// - [onBalance]: Callback with current card balance (paisa).
+  /// - [onTransactions]: Callback with list of transactions.
+  ///   Most recent first.
   ///
-  /// The NFC session will remain active until either a card is successfully read
-  /// or an error occurs, at which point the session is automatically stopped.
+  /// The session stays active until card is read or an error occurs.
   ///
   /// Example:
   /// ```dart
   /// await MrtCardReader.startSession(
   ///   onStatus: (status) => setState(() => _status = status),
   ///   onBalance: (balance) => setState(() => _balance = balance),
-  ///   onTransactions: (transactions) => setState(() => _transactions = transactions),
+  ///   onTransactions: (transactions) =>
+  ///     setState(() => _transactions = transactions),
   /// );
   /// ```
   static Future<void> startSession({
     required void Function(String status) onStatus,
     required void Function(int? balance) onBalance,
     required void Function(List<MrtTransaction> transactions) onTransactions,
+    void Function(MrtException exception)? onError,
+    Duration timeout = MrtConfig.defaultTimeout,
   }) async {
-    onStatus('Waiting for card...');
+    final instance = MrtCardReaderInstance(
+      logger: const NoOpLogger(),
+      timeout: timeout,
+    );
 
-    await NfcManager.instance.startSession(
-      onDiscovered: (NfcTag tag) async {
-        try {
-          // Get NfcF instance from the tag
-          final nfcF = NfcF.from(tag);
-
-          if (nfcF == null) {
-            onStatus('This is not a FeliCa card');
-            return;
-          }
-
-          onStatus('Reading card...');
-
-          // Read transaction history
-          final transactions = await _readTransactionHistory(nfcF);
-
-          if (transactions.isNotEmpty) {
-            // Get latest balance
-            final latestBalance = transactions.first.balance;
-
-            // Update UI
-            onBalance(latestBalance);
-            onTransactions(transactions);
-            onStatus('Card read successfully');
-          } else {
-            onStatus('No transactions found. Try again.');
-          }
-
-          // Stop session after reading
-          await NfcManager.instance.stopSession();
-        } catch (e) {
-          onStatus('Error: $e');
-          await NfcManager.instance.stopSession();
-        }
-      },
-      onError: (error) {
-        onStatus('Error: $error');
-        return Future.value(); // Return a non-null Future
-      },
+    await instance.startSession(
+      onStatus: onStatus,
+      onBalance: onBalance,
+      onTransactions: onTransactions,
+      onError: onError ?? (e) => onStatus('Error: ${e.message}'),
     );
   }
+}
 
-  static Future<List<MrtTransaction>> _readTransactionHistory(NfcF nfcF) async {
+/// Instance-based MRT card reader with configurable dependencies.
+///
+/// Use this class for advanced scenarios where you need:
+/// - Session cancellation
+/// - Custom logging
+/// - Configurable timeouts
+/// - Multiple concurrent instances
+///
+/// For simple use cases, prefer the static methods on [MrtCardReader].
+class MrtCardReaderInstance {
+  /// Creates a new instance with optional logger and timeout configuration.
+  MrtCardReaderInstance({
+    MrtLogger? logger,
+    Duration? timeout,
+  })  : _logger = logger ?? const NoOpLogger(),
+        _timeout = timeout ?? MrtConfig.defaultTimeout;
+
+  final MrtLogger _logger;
+  final Duration _timeout;
+  bool _isSessionActive = false;
+
+  /// Whether a session is currently active.
+  bool get isSessionActive => _isSessionActive;
+
+  /// Cancels the current session if one is active.
+  ///
+  /// This will stop the NFC reader and prevent further callbacks.
+  Future<void> cancelSession() async {
+    if (_isSessionActive) {
+      await NfcManager.instance.stopSession(errorMessage: 'Session cancelled');
+      _isSessionActive = false;
+      _logger.info('Session cancelled');
+    }
+  }
+
+  /// Starts an NFC reading session to retrieve MRT card data.
+  ///
+  /// This method initiates an NFC session that waits for a compatible MRT card.
+  /// Once detected, it reads the card's transaction history.
+  ///
+  /// Parameters:
+  /// - [onStatus]: Callback for status updates during reading
+  /// - [onBalance]: Callback with current card balance (in paisa)
+  /// - [onTransactions]: Callback with transactions (most recent first)
+  /// - [onError]: Callback for typed exceptions
+  ///
+  /// Throws [SessionAlreadyActiveException] if a session is already running.
+  Future<void> startSession({
+    required void Function(String status) onStatus,
+    required void Function(int? balance) onBalance,
+    required void Function(List<MrtTransaction> transactions) onTransactions,
+    required void Function(MrtException exception) onError,
+  }) async {
+    if (_isSessionActive) {
+      onError(const SessionAlreadyActiveException());
+      return;
+    }
+
+    final timeoutTimer = Timer(_timeout, () {
+      if (_isSessionActive) {
+        _isSessionActive = false;
+        NfcManager.instance.stopSession(errorMessage: 'Timeout');
+        onError(NfcTimeoutException(_timeout));
+      }
+    });
+
+    try {
+      _isSessionActive = true;
+      onStatus('Waiting for card...');
+
+      await NfcManager.instance.startSession(
+        onDiscovered: (NfcTag tag) async {
+          try {
+            final nfcF = NfcF.from(tag);
+
+            if (nfcF == null) {
+              onError(const InvalidCardException('This is not a FeliCa card'));
+              await NfcManager.instance.stopSession();
+              return;
+            }
+
+            onStatus('Reading card...');
+
+            final transactions = await _readTransactionHistory(nfcF);
+
+            if (transactions.isNotEmpty) {
+              final latestBalance = transactions.first.balance;
+
+              onBalance(latestBalance);
+              onTransactions(transactions);
+              onStatus('Card read successfully');
+            } else {
+              onStatus('No transactions found. Try again.');
+            }
+
+            await NfcManager.instance.stopSession();
+            _isSessionActive = false;
+            timeoutTimer.cancel();
+          } catch (e) {
+            _logger.error('Error during card reading', e);
+            if (e is MrtException) {
+              onError(e);
+            } else {
+              onError(DataCorruptionException('Failed to read card: $e'));
+            }
+            await NfcManager.instance.stopSession();
+            _isSessionActive = false;
+            timeoutTimer.cancel();
+          }
+        },
+        onError: (error) {
+          _logger.error('NFC error', error);
+          _isSessionActive = false;
+          timeoutTimer.cancel();
+          onError(DataCorruptionException('NFC error: $error'));
+          return Future<void>.value();
+        },
+      );
+    } catch (e) {
+      _isSessionActive = false;
+      timeoutTimer.cancel();
+      _logger.error('Failed to start session', e);
+      onError(const NfcNotAvailableException());
+    }
+  }
+
+  Future<List<MrtTransaction>> _readTransactionHistory(NfcF nfcF) async {
     final transactions = <MrtTransaction>[];
 
     try {
       final idm = nfcF.identifier;
 
-      // Service code for MRT card (0x220F)
-      const serviceCode = 0x220F;
       final serviceCodeList = Uint8List.fromList([
-        (serviceCode & 0xFF),
-        ((serviceCode >> 8) & 0xFF),
+        (MrtConfig.serviceCode & 0xFF),
+        ((MrtConfig.serviceCode >> 8) & 0xFF),
       ]);
 
-      const numberOfBlocksToRead = 15;
-
-      // Build block list elements
-      final blockListElements = Uint8List(numberOfBlocksToRead * 2);
-      for (var i = 0; i < numberOfBlocksToRead; i++) {
-        blockListElements[i * 2] = 0x80; // Two-byte block descriptor
-        blockListElements[i * 2 + 1] = i; // Block number
+      final blockListElements = Uint8List(MrtConfig.numberOfBlocks * 2);
+      for (var i = 0; i < MrtConfig.numberOfBlocks; i++) {
+        blockListElements[i * 2] = MrtConfig.blockDescriptor;
+        blockListElements[i * 2 + 1] = i;
       }
 
       // Calculate command length
@@ -135,72 +232,56 @@ class MrtCardReader {
       final command = Uint8List(commandLength);
 
       var idx = 0;
-      command[idx++] = commandLength; // Length
-      command[idx++] = 0x06; // Command code
+      command[idx++] = commandLength;
+      command[idx++] = MrtConfig.commandCode;
 
-      // Copy IDM
       for (var i = 0; i < idm.length; i++) {
         command[idx++] = idm[i];
       }
 
-      command[idx++] = 0x01; // Number of services
+      command[idx++] = 0x01;
       command[idx++] = serviceCodeList[0];
       command[idx++] = serviceCodeList[1];
-      command[idx++] = numberOfBlocksToRead; // Number of blocks
+      command[idx++] = MrtConfig.numberOfBlocks;
 
-      // Copy block list elements
       for (var i = 0; i < blockListElements.length; i++) {
         command[idx++] = blockListElements[i];
       }
 
-      // Send command and get response
       final response = await nfcF.transceive(data: command);
 
-      // Parse response
-      if (response.length < 13) {
-        return transactions;
-      }
-
-      final statusFlag1 = response[10];
-      final statusFlag2 = response[11];
-
-      if (statusFlag1 != 0x00 || statusFlag2 != 0x00) {
-        return transactions;
-      }
+      DataValidator.validateResponse(response);
 
       final numBlocks = response[12];
       final blockData = response.sublist(13);
 
-      const blockSize = 16; // Each block is 16 bytes
-      if (blockData.length < numBlocks * blockSize) {
-        return transactions;
+      if (blockData.length < numBlocks * MrtConfig.blockSize) {
+        throw const DataCorruptionException('Invalid block data length');
       }
 
       for (var i = 0; i < numBlocks; i++) {
-        final offset = i * blockSize;
-        final block = blockData.sublist(offset, offset + blockSize);
+        final offset = i * MrtConfig.blockSize;
+        final block = blockData.sublist(offset, offset + MrtConfig.blockSize);
 
         try {
           final transaction = _parseTransactionBlock(block);
           transactions.add(transaction);
         } catch (e) {
-          print('Error parsing block: $e');
+          _logger.warning('Error parsing block $i: $e');
         }
       }
 
-      // Post-process transactions to calculate topup amounts
       _calculateTopupAmounts(transactions);
     } catch (e) {
-      print('Error reading transaction history: $e');
+      _logger.error('Error reading transaction history', e);
+      rethrow;
     }
 
     return transactions;
   }
 
-  static MrtTransaction _parseTransactionBlock(Uint8List block) {
-    if (block.length != 16) {
-      throw Exception('Invalid block size');
-    }
+  MrtTransaction _parseTransactionBlock(Uint8List block) {
+    DataValidator.validateBlock(block);
 
     // Fixed Header (Offsets 0-3)
     final fixedHeader = block.sublist(0, 4);
@@ -242,30 +323,22 @@ class MrtCardReader {
         )
         .join(' ');
 
-    // Convert timestamp to human-readable date/time
     final timestamp = _decodeTimestamp(timestampValue);
 
-    // Map station codes to station names
-    final fromStation = _getStationName(fromStationCode);
-    final toStation = _getStationName(toStationCode);
+    final fromStation = MrtConfig.getStationName(fromStationCode);
+    final toStation = MrtConfig.getStationName(toStationCode);
 
     // Determine if this is a topup transaction
     final isTopup = fromStation != 'Unknown Station ($fromStationCode)' &&
         (toStation == 'Unknown Station ($toStationCode)' || toStationCode == 0);
 
-    // Calculate cost
     int? cost;
 
-    // If it's a topup transaction
     if (isTopup) {
-      // For topup, the cost is positive (amount added to the card)
-      // We need to compare with previous transaction to determine the amount
-      // For now, we'll set it to null and calculate it later
       cost = null;
     } else if (fromStation != 'Unknown Station ($fromStationCode)' &&
         toStation != 'Unknown Station ($toStationCode)') {
-      // For a journey, calculate fare based on stations
-      cost = _calculateFare(fromStationCode, toStationCode);
+      cost = MrtConfig.calculateFare(fromStationCode, toStationCode);
     }
 
     return MrtTransaction(
@@ -281,94 +354,20 @@ class MrtCardReader {
     );
   }
 
-  static int _calculateFare(int fromStationCode, int toStationCode) {
-    // Simple fare calculation based on distance between stations
-    // This is a placeholder - replace with actual fare calculation logic
-
-    // Get the station indices from the station map
-    final stationIndices = _getStationIndices();
-
-    // If either station is not in the map, return a default fare
-    if (!stationIndices.containsKey(fromStationCode) ||
-        !stationIndices.containsKey(toStationCode)) {
-      return 20; // Default fare
-    }
-
-    // Calculate fare based on distance (number of stations)
-    final distance =
-        (stationIndices[fromStationCode]! - stationIndices[toStationCode]!)
-            .abs();
-
-    // Base fare + per station charge
-    return 10 + (distance * 5);
-  }
-
-  static Map<int, int> _getStationIndices() {
-    // Map station codes to their position on the line
-    // This helps calculate distance between stations
-    final indices = <int, int>{};
-
-    final stationCodes = [
-      10,
-      20,
-      25,
-      30,
-      35,
-      40,
-      45,
-      50,
-      55,
-      60,
-      65,
-      70,
-      75,
-      80,
-      85,
-      95
-    ];
-
-    for (var i = 0; i < stationCodes.length; i++) {
-      indices[stationCodes[i]] = i;
-    }
-
-    return indices;
-  }
-
-  static String _decodeTimestamp(int value) {
+  String _decodeTimestamp(int value) {
     // Simple implementation - adjust based on actual encoding
     final baseTime =
         DateTime.now().millisecondsSinceEpoch - (value * 60 * 1000);
     final date = DateTime.fromMillisecondsSinceEpoch(baseTime);
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
-        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    final year = date.year;
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$year-$month-$day $hour:$minute';
   }
 
-  static String _getStationName(int code) {
-    // Map station codes to names - update with actual station codes
-    final stationMap = {
-      10: 'Motijheel',
-      20: 'Bangladesh Secretariat',
-      25: 'Dhaka University',
-      30: 'Shahbagh',
-      35: 'Karwan Bazar',
-      40: 'Farmgate',
-      45: 'Bijoy Sarani',
-      50: 'Agargaon',
-      55: 'Shewrapara',
-      60: 'Kazipara',
-      65: 'Mirpur 10',
-      70: 'Mirpur 11',
-      75: 'Pallabi',
-      80: 'Uttara South',
-      85: 'Uttara Center',
-      95: 'Uttara North',
-    };
-
-    return stationMap[code] ?? 'Unknown Station ($code)';
-  }
-
-  static void _calculateTopupAmounts(List<MrtTransaction> transactions) {
-    // Skip if there are no transactions
+  void _calculateTopupAmounts(List<MrtTransaction> transactions) {
     if (transactions.isEmpty) return;
 
     for (var i = 0; i < transactions.length - 1; i++) {
@@ -378,23 +377,13 @@ class MrtCardReader {
       // Check if current transaction is a topup
       if (current.isTopup) {
         // Calculate topup amount by comparing balances
-        // For topup, current balance should be higher than the previous transaction's balance
+        // Topup: current balance should be higher than previous balance
         final topupAmount = current.balance - next.balance;
 
         // Only set positive topup amounts
         if (topupAmount > 0) {
           // Update the cost field in the current transaction
-          transactions[i] = MrtTransaction(
-            fixedHeader: current.fixedHeader,
-            timestamp: current.timestamp,
-            transactionType: current.transactionType,
-            fromStation: current.fromStation,
-            toStation: current.toStation,
-            balance: current.balance,
-            cost: topupAmount,
-            trailing: current.trailing,
-            isTopup: current.isTopup,
-          );
+          transactions[i] = current.copyWith(cost: topupAmount);
         }
       }
     }
