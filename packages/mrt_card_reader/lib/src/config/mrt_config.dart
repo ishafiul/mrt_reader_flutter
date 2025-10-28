@@ -63,7 +63,7 @@ class MrtConfig {
     75,
     80,
     85,
-      95,
+    95,
   ];
 
   /// Map of station codes to their position index on the line.
