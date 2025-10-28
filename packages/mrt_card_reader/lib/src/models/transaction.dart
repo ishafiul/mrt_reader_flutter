@@ -1,42 +1,14 @@
-import 'package:mrt_card_reader/mrt_card_reader.dart' show MrtCardReader;
-import 'package:mrt_card_reader/src/mrt_card_reader.dart' show MrtCardReader;
+import 'package:mrt_card_reader/src/validators/data_validator.dart';
 
 /// Represents a transaction record from an MRT card.
 ///
 /// This class contains information about a single transaction including
 /// its type (journey or top-up), stations involved, balance, and cost.
-///
-/// MrtTransaction objects are created when an MRT card is scanned using
-/// the [MrtCardReader] class, which parses raw card data into structured
-/// transaction records.
-///
-/// Example:
-/// ```dart
-/// final transaction = MrtTransaction(
-///   fixedHeader: '00 00 00 00',
-///   timestamp: '2023-05-15 14:30',
-///   transactionType: '00 00',
-///   fromStation: 'Uttara North',
-///   toStation: 'Agargaon',
-///   balance: 5000,
-///   cost: 100,
-///   trailing: '00 00',
-///   isTopup: false,
-/// );
-/// ```
 class MrtTransaction {
   /// Creates a new MRT transaction instance.
   ///
-  /// All parameters except [cost] are required:
-  /// - [fixedHeader]: Raw header data from the card
-  /// - [timestamp]: Date and time of the transaction
-  /// - [transactionType]: Type of transaction in hex format
-  /// - [fromStation]: Origin station or top-up location
-  /// - [toStation]: Destination station (may be empty for top-ups)
-  /// - [balance]: Remaining balance after transaction
-  /// - [trailing]: Raw trailing data from the card
-  /// - [isTopup]: Whether this is a top-up transaction
-  /// - [cost]: Transaction amount (optional, may be null)
+  /// All parameters are required except [cost]. The [balance] must be
+  /// within valid range or a validation error will be thrown.
   MrtTransaction({
     required this.fixedHeader,
     required this.timestamp,
@@ -47,14 +19,14 @@ class MrtTransaction {
     required this.trailing,
     required this.isTopup,
     this.cost,
-  });
+  }) {
+    DataValidator.validateBalance(balance);
+  }
 
   /// Creates a transaction instance from a map.
   ///
   /// This factory constructor is useful for converting data from
-  /// storage or network sources into MrtTransaction objects.
-  ///
-  /// The map must contain the same keys as would be produced by [toMap].
+  /// storage or network sources into [MrtTransaction] objects.
   factory MrtTransaction.fromMap(Map<String, dynamic> map) {
     return MrtTransaction(
       fixedHeader: map['fixedHeader'] as String,
@@ -85,10 +57,10 @@ class MrtTransaction {
   /// Name of the destination station (may be empty for top-ups).
   final String toStation;
 
-  /// Card balance after this transaction (in local currency).
+  /// Card balance after this transaction in paisa (Taka * 100).
   final int balance;
 
-  /// Cost of the journey or amount topped up (in local currency).
+  /// Cost of the journey or amount topped up in paisa (Taka * 100).
   /// Null if unknown or not applicable.
   final int? cost;
 
@@ -98,11 +70,38 @@ class MrtTransaction {
   /// Whether this transaction represents a top-up rather than a journey.
   final bool isTopup;
 
+  /// Creates a copy of this transaction with updated fields.
+  ///
+  /// Only the specified fields will be updated; all others remain unchanged.
+  MrtTransaction copyWith({
+    String? fixedHeader,
+    String? timestamp,
+    String? transactionType,
+    String? fromStation,
+    String? toStation,
+    int? balance,
+    int? cost,
+    String? trailing,
+    bool? isTopup,
+  }) {
+    return MrtTransaction(
+      fixedHeader: fixedHeader ?? this.fixedHeader,
+      timestamp: timestamp ?? this.timestamp,
+      transactionType: transactionType ?? this.transactionType,
+      fromStation: fromStation ?? this.fromStation,
+      toStation: toStation ?? this.toStation,
+      balance: balance ?? this.balance,
+      cost: cost ?? this.cost,
+      trailing: trailing ?? this.trailing,
+      isTopup: isTopup ?? this.isTopup,
+    );
+  }
+
   /// Converts this transaction to a map.
   ///
   /// This is useful for serializing the transaction for storage
-  /// or transmission. The resulting map can be converted back into
-  /// an MrtTransaction using the [MrtTransaction.fromMap] constructor.
+  /// or transmission. The resulting map can be converted back using the
+  /// [MrtTransaction.fromMap] factory constructor.
   Map<String, dynamic> toMap() {
     return {
       'fixedHeader': fixedHeader,
@@ -119,6 +118,10 @@ class MrtTransaction {
 
   @override
   String toString() {
-    return 'MrtTransaction(fixedHeader: $fixedHeader, timestamp: $timestamp, transactionType: $transactionType, fromStation: $fromStation, toStation: $toStation, balance: $balance, cost: $cost, trailing: $trailing, isTopup: $isTopup)';
+    return 'MrtTransaction(fixedHeader: $fixedHeader, '
+        'timestamp: $timestamp, transactionType: $transactionType, '
+        'fromStation: $fromStation, toStation: $toStation, '
+        'balance: $balance, cost: $cost, trailing: $trailing, '
+        'isTopup: $isTopup)';
   }
 }
