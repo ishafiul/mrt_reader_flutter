@@ -18,6 +18,10 @@ A Flutter package for reading transaction data from Dhaka MRT (Mass Rapid Transi
   - Journey costs
   - Top-up amounts
   - Current balance
+- **Typed exception handling** for better error management
+- **Session management** with cancellation and timeout support
+- **Configurable logging** for debugging
+- **Data validation** for card responses
 
 ## Requirements
 
@@ -115,6 +119,12 @@ class _MrtCardReaderDemoState extends State<MrtCardReaderDemo> {
           _transactions = transactions;
         });
       },
+      onError: (exception) {
+        setState(() {
+          _status = 'Error: ${exception.message}';
+        });
+      },
+      timeout: const Duration(seconds: 30),
     );
   }
 
@@ -168,6 +178,31 @@ class _MrtCardReaderDemoState extends State<MrtCardReaderDemo> {
 }
 ```
 
+### Advanced Usage with Instance API
+
+For more control, use the instance-based API:
+
+```dart
+final reader = MrtCardReaderInstance(
+  logger: ConsoleLogger(),
+  timeout: const Duration(seconds: 60),
+);
+
+await reader.startSession(
+  onStatus: (status) => print(status),
+  onBalance: (balance) => print('Balance: $balance'),
+  onTransactions: (transactions) => print(transactions),
+  onError: (exception) => print('Error: ${exception.toString()}'),
+
+// Check if session is active
+if (reader.isSessionActive) {
+  print('Reading in progress...');
+}
+
+// Cancel session if needed
+await reader.cancelSession();
+```
+
 For a complete example, check out the [example](https://github.com/ishafiul/mrt_reader_flutter/tree/main/packages/mrt_card_reader/example) directory in the repository.
 
 ## API Reference
@@ -180,14 +215,16 @@ Checks if NFC is available on the device.
 
 Returns `true` if NFC is available and enabled, `false` otherwise.
 
-#### `static Future<void> startSession({required Function(String) onStatus, required Function(int?) onBalance, required Function(List<MrtTransaction>) onTransactions})`
+#### `static Future<void> startSession({required Function(String) onStatus, required Function(int?) onBalance, required Function(List<MrtTransaction>) onTransactions, Function(MrtException)? onError, Duration timeout})`
 
 Starts an NFC reading session to retrieve MRT card data.
 
 Parameters:
 - `onStatus`: Callback that provides status updates during the reading process.
-- `onBalance`: Callback that provides the current card balance after successful reading.
+- `onBalance`: Callback that provides the current card balance after successful reading (in paisa).
 - `onTransactions`: Callback that provides the list of transactions read from the card.
+- `onError`: Optional callback for typed exceptions (recommended).
+- `timeout`: Optional timeout duration (default: 30 seconds).
 
 ### MrtTransaction
 
@@ -195,12 +232,45 @@ Represents a transaction record from an MRT card.
 
 #### Properties
 
-- `timestamp`: Timestamp of when the transaction occurred.
+- `fixedHeader`: Raw header data from the card's data block.
+- `timestamp`: Timestamp of when the transaction occurred (YYYY-MM-DD HH:MM).
+- `transactionType`: Transaction type in hexadecimal format.
 - `fromStation`: Name of the origin station (or top-up location).
 - `toStation`: Name of the destination station (may be empty for top-ups).
-- `balance`: Card balance after this transaction (in local currency).
-- `cost`: Cost of the journey or amount topped up (in local currency).
+- `balance`: Card balance after this transaction (in paisa, Taka * 100).
+- `cost`: Cost of the journey or amount topped up (in paisa, null if unknown).
+- `trailing`: Trailing data from the card's data block.
 - `isTopup`: Whether this transaction represents a top-up rather than a journey.
+
+#### Methods
+
+- `copyWith({...})`: Creates a copy with updated fields.
+- `toMap()`: Converts to a map for serialization.
+- `fromMap(Map<String, dynamic>)`: Factory constructor to create from a map.
+- `toString()`: Returns a string representation.
+
+### Exception Types
+
+The package provides typed exceptions for better error handling:
+
+- `MrtException`: Base exception class
+- `NfcNotAvailableException`: NFC not available or disabled
+- `InvalidCardException`: Invalid or unsupported card
+- `DataCorruptionException`: Corrupted or unreadable card data
+- `NfcTimeoutException`: Reading operation timed out
+- `SessionAlreadyActiveException`: Session already in progress
+
+## Troubleshooting
+
+### Common Issues
+
+**NFC not available**: Ensure NFC is enabled in device settings and the device supports NFC.
+
+**Card reading timeout**: Increase the timeout duration or check card proximity.
+
+**Invalid card errors**: Ensure you're using a valid Dhaka MRT Line 6 card (FeliCa card).
+
+**Data corruption**: Card may be damaged or incompatible with the reader.
 
 ## Contributing
 
