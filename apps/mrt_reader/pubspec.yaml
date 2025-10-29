@@ -13,7 +13,7 @@ dependencies:
   flutter_bloc: ^8.1.6
   flutter_localizations:
     sdk: flutter
-  intl: ^0.19.0
+  intl: ^0.20.2
   mrt_card_reader: ^0.2.0
   freezed_annotation: ^3.0.0
   json_annotation: ^4.8.1
@@ -22,7 +22,6 @@ dependencies:
   drift: ^2.26.0
   drift_flutter: ^0.2.4
   path_provider: ^2.1.2
-  nfc_manager: ^3.3.0
   path: ^1.8.3
 
 dev_dependencies:
