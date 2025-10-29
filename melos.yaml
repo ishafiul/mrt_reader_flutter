@@ -1,5 +1,5 @@
 name: mrt_buddy_monorepo
-repository: https://github.com/yourusername/mrt_buddy_flutter
+repository: https://github.com/ishafiul/mrt_reader_flutter
 
 packages:
   - packages/**
