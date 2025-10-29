@@ -11,6 +11,27 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 Packages with breaking changes:
 
+ - [`mrt_card_reader` - `v0.3.0`](#mrt_card_reader---v030)
+
+Packages with other changes:
+
+ - There are no other changes in this release.
+
+---
+
+#### `mrt_card_reader` - `v0.3.0`
+
+ - **BREAKING** **FEAT**(mrt_card_reader): add iOS support via FeliCa API. ([d1092be0](https://github.com/ishafiul/mrt_reader_flutter/commit/d1092be056b3a2895c0b7b1d582d8611b86cf012))
+
+
+## 2025-10-29
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
  - [`mrt_card_reader` - `v0.2.0`](#mrt_card_reader---v020)
 
 Packages with other changes:

@@ -1,3 +1,9 @@
+## 0.3.0
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **FEAT**(mrt_card_reader): add iOS support via FeliCa API. ([d1092be0](https://github.com/ishafiul/mrt_reader_flutter/commit/d1092be056b3a2895c0b7b1d582d8611b86cf012))
+
 ## 0.2.0
 
 > Note: This release has breaking changes.
