@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:mrt_card_reader/src/config/mrt_config.dart';
 import 'package:mrt_card_reader/src/exceptions/mrt_exceptions.dart';
 import 'package:mrt_card_reader/src/models/transaction.dart';
 import 'package:mrt_card_reader/src/utils/logger.dart';
 import 'package:mrt_card_reader/src/validators/data_validator.dart';
 import 'package:nfc_manager/nfc_manager.dart';
-import 'package:nfc_manager/platform_tags.dart';
+
+import 'package:nfc_manager/nfc_manager_android.dart' as android;
+import 'package:nfc_manager/nfc_manager_ios.dart' as ios;
 
 /// A utility class for reading MRT (Mass Rapid Transit) card data via NFC.
 ///
@@ -37,7 +41,17 @@ class MrtCardReader {
   /// This method should be called before attempting to start an NFC session
   /// to ensure that the device supports NFC functionality.
   static Future<bool> isAvailable() async {
-    return NfcManager.instance.isAvailable();
+    final availability = await NfcManager.instance.checkAvailability();
+    return availability == NfcAvailability.enabled;
+  }
+
+  /// Checks if iOS can read MRT cards.
+  ///
+  /// Returns `true` if iOS platform can read MRT cards, `false` otherwise.
+  /// iOS implementation uses readWithoutEncryption() API which should work
+  /// with FeliCa cards that use standard block reading.
+  static bool isIOSSupported() {
+    return Platform.isIOS;
   }
 
   /// Starts an NFC reading session to retrieve MRT card data.
@@ -95,11 +109,9 @@ class MrtCardReader {
 /// For simple use cases, prefer the static methods on [MrtCardReader].
 class MrtCardReaderInstance {
   /// Creates a new instance with optional logger and timeout configuration.
-  MrtCardReaderInstance({
-    MrtLogger? logger,
-    Duration? timeout,
-  })  : _logger = logger ?? const NoOpLogger(),
-        _timeout = timeout ?? MrtConfig.defaultTimeout;
+  MrtCardReaderInstance({MrtLogger? logger, Duration? timeout})
+    : _logger = logger ?? const NoOpLogger(),
+      _timeout = timeout ?? MrtConfig.defaultTimeout;
 
   final MrtLogger _logger;
   final Duration _timeout;
@@ -113,7 +125,9 @@ class MrtCardReaderInstance {
   /// This will stop the NFC reader and prevent further callbacks.
   Future<void> cancelSession() async {
     if (_isSessionActive) {
-      await NfcManager.instance.stopSession(errorMessage: 'Session cancelled');
+      await NfcManager.instance.stopSession(
+        errorMessageIos: 'Session cancelled',
+      );
       _isSessionActive = false;
       _logger.info('Session cancelled');
     }
@@ -145,7 +159,7 @@ class MrtCardReaderInstance {
     final timeoutTimer = Timer(_timeout, () {
       if (_isSessionActive) {
         _isSessionActive = false;
-        NfcManager.instance.stopSession(errorMessage: 'Timeout');
+        NfcManager.instance.stopSession(errorMessageIos: 'Timeout');
         onError(NfcTimeoutException(_timeout));
       }
     });
@@ -155,11 +169,24 @@ class MrtCardReaderInstance {
       onStatus('Waiting for card...');
 
       await NfcManager.instance.startSession(
+        pollingOptions: {NfcPollingOption.iso18092},
         onDiscovered: (NfcTag tag) async {
           try {
-            final nfcF = NfcF.from(tag);
+            dynamic nfcTag;
 
-            if (nfcF == null) {
+            if (kIsWeb || Platform.isAndroid) {
+              final nfcF = android.NfcFAndroid.from(tag);
+              if (nfcF != null) {
+                nfcTag = nfcF;
+              }
+            } else if (Platform.isIOS) {
+              final feliCa = ios.FeliCaIos.from(tag);
+              if (feliCa != null) {
+                nfcTag = feliCa;
+              }
+            }
+
+            if (nfcTag == null) {
               onError(const InvalidCardException('This is not a FeliCa card'));
               await NfcManager.instance.stopSession();
               return;
@@ -167,7 +194,7 @@ class MrtCardReaderInstance {
 
             onStatus('Reading card...');
 
-            final transactions = await _readTransactionHistory(nfcF);
+            final transactions = await _readTransactionHistory(nfcTag);
 
             if (transactions.isNotEmpty) {
               final latestBalance = transactions.first.balance;
@@ -194,12 +221,11 @@ class MrtCardReaderInstance {
             timeoutTimer.cancel();
           }
         },
-        onError: (error) {
+        onSessionErrorIos: (error) {
           _logger.error('NFC error', error);
           _isSessionActive = false;
           timeoutTimer.cancel();
           onError(DataCorruptionException('NFC error: $error'));
-          return Future<void>.value();
         },
       );
     } catch (e) {
@@ -210,11 +236,80 @@ class MrtCardReaderInstance {
     }
   }
 
-  Future<List<MrtTransaction>> _readTransactionHistory(NfcF nfcF) async {
+  Uint8List _getIdm(dynamic nfcTag) {
+    if (kIsWeb || Platform.isAndroid) {
+      return (nfcTag as android.NfcFAndroid).tag.id;
+    } else if (Platform.isIOS) {
+      return (nfcTag as ios.FeliCaIos).currentIDm;
+    }
+    throw UnsupportedError('Platform not supported');
+  }
+
+  Future<Uint8List> _transceive(dynamic nfcTag, Uint8List command) async {
+    if (kIsWeb || Platform.isAndroid) {
+      return (nfcTag as android.NfcFAndroid).transceive(command);
+    } else if (Platform.isIOS) {
+      return _readWithoutEncryptionIos(nfcTag, command);
+    }
+    throw UnsupportedError('Platform not supported');
+  }
+
+  Future<Uint8List> _readWithoutEncryptionIos(
+    dynamic nfcTag,
+    Uint8List command,
+  ) async {
+    final feliCa = nfcTag as ios.FeliCaIos;
+
+    final serviceCodeBytes = Uint8List.fromList([command[11], command[12]]);
+
+    final serviceCodeList = [serviceCodeBytes];
+
+    final numBlocks = command[13];
+    final blockList = <Uint8List>[];
+
+    for (var i = 0; i < numBlocks; i++) {
+      final offset = 14 + (i * 2);
+      if (offset + 1 < command.length) {
+        final blockNum = command[offset + 1];
+        blockList.add(Uint8List.fromList([blockNum]));
+      }
+    }
+
+    final response = await feliCa.readWithoutEncryption(
+      serviceCodeList: serviceCodeList,
+      blockList: blockList,
+    );
+
+    if (response.statusFlag1 != 0x00 || response.statusFlag2 != 0x00) {
+      throw DataCorruptionException(
+        'Invalid status flags: ${response.statusFlag1}, ${response.statusFlag2}',
+      );
+    }
+
+    final blockSizeTotal = response.blockData.length * MrtConfig.blockSize;
+    final androidFormat = Uint8List(13 + blockSizeTotal);
+
+    androidFormat[10] = response.statusFlag1;
+    androidFormat[11] = response.statusFlag2;
+    androidFormat[12] = response.blockData.length;
+
+    var dataOffset = 13;
+    for (final block in response.blockData) {
+      if (dataOffset + block.length <= androidFormat.length) {
+        final end = dataOffset + block.length;
+        androidFormat.setRange(dataOffset, end, block);
+        dataOffset += block.length;
+      }
+    }
+
+    return androidFormat;
+  }
+
+  Future<List<MrtTransaction>> _readTransactionHistory(dynamic nfcTag) async {
     final transactions = <MrtTransaction>[];
 
     try {
-      final idm = nfcF.identifier;
+      final idm = _getIdm(nfcTag);
 
       final serviceCodeList = Uint8List.fromList([
         (MrtConfig.serviceCode & 0xFF),
@@ -248,7 +343,7 @@ class MrtCardReaderInstance {
         command[idx++] = blockListElements[i];
       }
 
-      final response = await nfcF.transceive(data: command);
+      final response = await _transceive(nfcTag, command);
 
       DataValidator.validateResponse(response);
 
@@ -311,16 +406,15 @@ class MrtCardReaderInstance {
 
     // Balance (Offsets 11-13), little-endian format
     final balanceBytes = block.sublist(11, 14);
-    final balance = ((balanceBytes[2] & 0xFF) << 16) |
+    final balance =
+        ((balanceBytes[2] & 0xFF) << 16) |
         ((balanceBytes[1] & 0xFF) << 8) |
         (balanceBytes[0] & 0xFF);
 
     // Trailing (Offsets 14-15)
     final trailingBytes = block.sublist(14, 16);
     final trailing = trailingBytes
-        .map(
-          (b) => b.toRadixString(16).padLeft(2, '0').toUpperCase(),
-        )
+        .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
         .join(' ');
 
     final timestamp = _decodeTimestamp(timestampValue);
@@ -329,7 +423,8 @@ class MrtCardReaderInstance {
     final toStation = MrtConfig.getStationName(toStationCode);
 
     // Determine if this is a topup transaction
-    final isTopup = fromStation != 'Unknown Station ($fromStationCode)' &&
+    final isTopup =
+        fromStation != 'Unknown Station ($fromStationCode)' &&
         (toStation == 'Unknown Station ($toStationCode)' || toStationCode == 0);
 
     int? cost;

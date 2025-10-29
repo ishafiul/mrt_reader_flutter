@@ -6,13 +6,13 @@ homepage: https://github.com/ishafiul/mrt_reader_flutter
 issue_tracker: https://github.com/ishafiul/mrt_reader_flutter/issues
 
 environment:
-  sdk: '>=2.18.1 <4.0.0'
-  flutter: ">=2.5.0"
+  sdk: ^3.9.2
+  flutter: '>=3.3.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  nfc_manager: ^3.0.2
+  nfc_manager: ^4.1.1
 
 dev_dependencies:
   mocktail: ^1.0.4
