@@ -9,6 +9,7 @@ A Flutter package for reading transaction data from Dhaka MRT (Mass Rapid Transi
 ![MRT Card Reader Demo](https://raw.githubusercontent.com/ishafiul/mrt_reader_flutter/refs/heads/main/packages/mrt_card_reader/doc/assets/mrt_card_reader_demo.jpg)
 ## Features
 
+- **Cross-platform support**: Works on both Android and iOS
 - Check NFC availability on the device
 - Read Dhaka MRT card balance
 - Retrieve transaction history (journeys and top-ups)
@@ -28,6 +29,11 @@ A Flutter package for reading transaction data from Dhaka MRT (Mass Rapid Transi
 - Flutter 3.0.0 or higher
 - Android device with NFC capabilities (API level 19+)
 - iOS device with NFC capabilities (iOS 13+)
+
+### Platform Support
+
+- **Android**: Fully supported using NFC-F (FeliCa) protocol via native `transceive()` API
+- **iOS**: Fully supported using FeliCa `readWithoutEncryption()` API. The implementation automatically converts between raw commands (Android) and higher-level FeliCa API (iOS), providing seamless cross-platform compatibility with identical transaction data output.
 
 ## Installation
 
@@ -69,7 +75,13 @@ Add the following to your `Info.plist` file:
 </array>
 ```
 
-You also need to enable the Near Field Communication Tag Reading capability in your Xcode project.
+You also need to enable the "Near Field Communication Tag Reading" capability in your Xcode project:
+
+1. Open your project in Xcode
+2. Select your target
+3. Go to "Signing & Capabilities" tab
+4. Click "+ Capability"
+5. Add "Near Field Communication Tag Reading"
 
 ## Usage
 
@@ -260,17 +272,31 @@ The package provides typed exceptions for better error handling:
 - `NfcTimeoutException`: Reading operation timed out
 - `SessionAlreadyActiveException`: Session already in progress
 
+## Platform-Specific Notes
+
+### Android
+- Uses native NFC-F (FeliCa) `transceive()` for direct card communication
+- Compatible with Android API level 19+
+
+### iOS
+- Uses FeliCa `readWithoutEncryption()` API (iOS 13+)
+- Automatically handles platform differences internally
+- Same transaction data output as Android
+- Requires FeliCa-compatible iPhone (iPhone 7 or later, except iPhone X)
+
 ## Troubleshooting
 
 ### Common Issues
 
-**NFC not available**: Ensure NFC is enabled in device settings and the device supports NFC.
+**NFC not available**: Ensure NFC is enabled in device settings and the device supports NFC. On iOS, ensure you have a compatible device (iPhone 7 or later).
 
 **Card reading timeout**: Increase the timeout duration or check card proximity.
 
 **Invalid card errors**: Ensure you're using a valid Dhaka MRT Line 6 card (FeliCa card).
 
 **Data corruption**: Card may be damaged or incompatible with the reader.
+
+**iOS not reading card**: Ensure you have enabled the NFC capability in Xcode and have a FeliCa-compatible iPhone model.
 
 ## Contributing
 

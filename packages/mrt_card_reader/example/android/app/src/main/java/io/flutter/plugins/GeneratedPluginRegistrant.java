@@ -16,9 +16,9 @@ public final class GeneratedPluginRegistrant {
   private static final String TAG = "GeneratedPluginRegistrant";
   public static void registerWith(@NonNull FlutterEngine flutterEngine) {
     try {
-      flutterEngine.getPlugins().add(new io.flutter.plugins.nfcmanager.NfcManagerPlugin());
+      flutterEngine.getPlugins().add(new dev.flutter.plugins.nfcmanager.NfcManagerPlugin());
     } catch (Exception e) {
-      Log.e(TAG, "Error registering plugin nfc_manager, io.flutter.plugins.nfcmanager.NfcManagerPlugin", e);
+      Log.e(TAG, "Error registering plugin nfc_manager, dev.flutter.plugins.nfcmanager.NfcManagerPlugin", e);
     }
   }
 }

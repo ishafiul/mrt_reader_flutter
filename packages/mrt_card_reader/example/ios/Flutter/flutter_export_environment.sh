@@ -1,6 +1,6 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=/Users/shafiulislam/.asdf/installs/flutter/3.29.0-stable"
+export "FLUTTER_ROOT=/Users/shafiulislam/.asdf/installs/flutter/3.35.7-stable"
 export "FLUTTER_APPLICATION_PATH=/Users/shafiulislam/Documents/dev/mrt_buddy_flutter/packages/mrt_card_reader/example"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_TARGET=lib/main.dart"
